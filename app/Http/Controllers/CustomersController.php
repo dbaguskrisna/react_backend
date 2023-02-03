@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Customer;
+use GuzzleHttp\Psr7\Message;
 use Illuminate\Http\Request;
 
 class CustomersController extends Controller
@@ -20,11 +21,19 @@ class CustomersController extends Controller
     }
 
     public function indexById(Request $request){
-        $id = $request->id;
+        try {
+            $id = $request->id;
 
-        $rs = Customer::find($id);
+            $rs = Customer::find($id);
 
-        return response()->json($rs,200);
+            if($rs == null){
+                return response()->json(["message" => "not found"],404);
+            } else {
+                return response()->json($rs,200);
+            }
+        } catch (\PDOException $e) {
+            return response()->json($e,200);
+        }
     }
 
     /**
@@ -34,7 +43,7 @@ class CustomersController extends Controller
      */
     public function create()
     {
-        //
+       
     }
 
     /**
@@ -45,7 +54,16 @@ class CustomersController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        try {
+            $customer = new Customer();
+            $customer->name = $request->name;
+            $customer->industry = $request->industry;
+            $customer->save();
+    
+            return response()->json(["status"=>"success","message" => "Success add new customer"],200);
+        } catch (\PDOException $e) {
+            return response()->json(["status"=>"failed","message" => $e], 200);
+        }
     }
 
     /**
@@ -79,7 +97,18 @@ class CustomersController extends Controller
      */
     public function update(Request $request, Customer $customer)
     {
-        //
+        try {
+            $id = $request->id;
+
+            $customer = Customer::find($id);
+            $customer->name = $request->name;
+            $customer->industry = $request->industry;
+            $customer->save();
+    
+            return response()->json(["message" => "success"],200);
+        } catch (\PDOException $e) {
+            return response()->json(["message" => $e], 200);
+        }
     }
 
     /**
@@ -88,8 +117,16 @@ class CustomersController extends Controller
      * @param  \App\Models\Customer  $customer
      * @return \Illuminate\Http\Response
      */
-    public function destroy(Customer $customer)
+    public function destroy(Request $request, Customer $customer)
     {
-        //
+        try {
+            $id = $request->id;
+            $customer = Customer::find($id);
+            $customer->delete();
+
+            return response()->json(["message" => "success"], 200);
+        } catch (\PDOException $e) {
+            return response()->json(["message" => $e], 200);
+        }
     }
 }
